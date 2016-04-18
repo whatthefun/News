@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">News</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="TopStories">焦點新聞</string>
+    <string name="World">國際</string>
+    <string name="Taiwan">臺灣</string>
+    <string name="Business">財經</string>
+    <string name="Technology">科技</string>
+    <string name="Sports">體育</string>
+    <string name="Entertainment">娛樂</string>
+    <string name="Taiwan_China">兩岸</string>
+    <string name="Community">社會</string>
+    <string name="Healthy">健康</string>
+
+    <string name="action_settings">Settings</string>
+</resources>

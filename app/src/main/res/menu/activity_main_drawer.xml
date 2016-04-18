@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/iTopStories"
+            android:icon="@drawable/top_stories"
+            android:title="@string/TopStories" />
+        <item
+            android:id="@+id/iWorld"
+            android:icon="@drawable/world"
+            android:title="@string/World" />
+        <item
+            android:id="@+id/iTaiwan"
+            android:icon="@drawable/taiwan"
+            android:title="@string/Taiwan" />
+        <item
+            android:id="@+id/iBusiness"
+            android:icon="@drawable/business"
+            android:title="@string/Business" />
+        <item
+            android:id="@+id/iTechnology"
+            android:icon="@drawable/technology"
+            android:title="@string/Technology" />
+        <item
+            android:id="@+id/iSports"
+            android:icon="@drawable/sports"
+            android:title="@string/Sports" />
+        <item
+            android:id="@+id/iEntertainment"
+            android:icon="@drawable/entertainment"
+            android:title="@string/Entertainment" />
+        <item
+            android:id="@+id/iTaiwan_China"
+            android:icon="@drawable/taiwan_china"
+            android:title="@string/Taiwan_China" />
+        <item
+            android:id="@+id/iCommunity"
+            android:icon="@drawable/community"
+            android:title="@string/Community" />
+        <item
+            android:id="@+id/iHealthy"
+            android:icon="@drawable/health"
+            android:title="@string/Healthy" />
+    </group>
+
+</menu>
