@@ -44,14 +44,13 @@ public class MainActivity extends AppCompatActivity
                     urlBusiness = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=b",
                     urlTechnology = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=t",
                     urlSports = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=s",
-                    urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e&siidp=7d042cb3d7b91a0e54a0c642fe336095648a&ict=ln",
+                    urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e",
                     urlTaiwan_China = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=c",
                     urlCommunity = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=y",
                     urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
 
     private String sUrl = urlTopStories;
     private ListView listView;
-//    private List<News> news_list = new ArrayList<News>();//進去後new 一個
     private Adapter adapter;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressDialog progressDialog = null;
@@ -118,7 +117,7 @@ public class MainActivity extends AppCompatActivity
 
         new Thread(thread).start();
     }
-    //改非同步執行
+
     //抓新聞資料的執行續
     private Thread thread = new Thread(new Runnable() {
         @Override
@@ -126,10 +125,7 @@ public class MainActivity extends AppCompatActivity
             runOnUiThread(new Runnable() {
                 public void run() {
                     setProgressBarIndeterminateVisibility(true);
-
-//                    if(progressDialog == null){
-                        progressDialog = ProgressDialog.show(MainActivity.this, "請稍等...", "獲取資料中...", true);
-//                    }
+                    progressDialog = ProgressDialog.show(MainActivity.this, "請稍等...", "獲取資料中...", true);
                 }
             });
             Looper.prepare();
@@ -145,22 +141,21 @@ public class MainActivity extends AppCompatActivity
                 Log.e("Connection", e.toString());
             }
             Elements elements = doc.select("table.esc-layout-table");
-            List<News> news_list = new ArrayList<News>();//進去後new 一個
+            List<News> news_list = new ArrayList<News>();//new 新的List<News>裝新資料
 
             for (int i = 0; i < elements.size(); i++) {
                 String imageUrl = "", Title = "", Time = "", Address = "", Source = "";
                 Bitmap Image = null;
-                //google圖片是用Base64編碼存放，所以先把此字串前面data:image/jpeg;base64,的宣告刪掉再去解碼
+
+                //Google新聞的圖片Html格式一種用src一種用imgsrc
                 imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("src");
                 if(imageUrl == ""){
                     imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("imgsrc");
                 }
 
-                if(! imageUrl.equals("")){
-//                    Log.d("subString", imageUrl.substring(0,2) +"160");
-                    if (imageUrl.substring(0,3).equals("//t")) {
+                if(! imageUrl.equals("")){//在此過濾空的圖片
+                    if (imageUrl.substring(0,3).equals("//t")) {//google有些圖放在//t開頭的網址裡
                         Image = getBitmapfromURL("http:" + imageUrl);
-                        Log.e("//t", imageUrl);
                     } else {  //google有的圖片是用Base64編碼存放，所以先把此字串前面data:image/jpeg;base64,的宣告刪掉再去解碼
                         try {
                             imageUrl = imageUrl.substring(imageUrl.indexOf(",") + 1);
