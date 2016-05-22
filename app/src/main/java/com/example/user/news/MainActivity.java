@@ -5,9 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -18,6 +18,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.AbsListView;
@@ -39,15 +40,15 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private final static String urlTopStories = "https://news.google.com.tw/news",
-                    urlWorld = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=w",
-                    urlTaiwan = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=n",
-                    urlBusiness = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=b",
-                    urlTechnology = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=t",
-                    urlSports = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=s",
-                    urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e",
-                    urlTaiwan_China = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=c",
-                    urlCommunity = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=y",
-                    urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
+            urlWorld = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=w",
+            urlTaiwan = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=n",
+            urlBusiness = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=b",
+            urlTechnology = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=t",
+            urlSports = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=s",
+            urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e",
+            urlTaiwan_China = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=c",
+            urlCommunity = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=y",
+            urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
 
     private String sUrl = urlTopStories;
     private ListView listView;
@@ -66,13 +67,17 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         listView = (ListView) findViewById(R.id.listView);
+        listView.setOnTouchListener(listViewTouchListener);
+
+        listView.setFastScrollEnabled(true);
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         txtHeading = (TextView) findViewById(R.id.txtHeading);
 
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_red_light, android.R.color.holo_orange_light, android.R.color.holo_green_light, android.R.color.holo_blue_light, android.R.color.holo_purple);
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {}
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+            }
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
@@ -90,7 +95,7 @@ public class MainActivity extends AppCompatActivity
                 Log.d("onRefresh", "Refreshing");
                 swipeRefreshLayout.setRefreshing(true);
                 swipeRefreshLayout.setEnabled(false);
-                new Thread(thread).start();
+                new Thread(spider).start();
             }
         });
 
@@ -99,8 +104,7 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                new Thread(slide).start();
             }
         });
 
@@ -115,11 +119,13 @@ public class MainActivity extends AppCompatActivity
         navigationView.getMenu().getItem(0).setChecked(true);
         navigationView.setNavigationItemSelectedListener(this);
 
-        new Thread(thread).start();
+        new Thread(spider).start();
     }
 
+
+
     //抓新聞資料的執行續
-    private Thread thread = new Thread(new Runnable() {
+    private Thread spider = new Thread(new Runnable() {
         @Override
         public void run() {
             runOnUiThread(new Runnable() {
@@ -149,19 +155,19 @@ public class MainActivity extends AppCompatActivity
 
                 //Google新聞的圖片Html格式一種用src一種用imgsrc
                 imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("src");
-                if(imageUrl == ""){
+                if (imageUrl == "") {
                     imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("imgsrc");
                 }
 
-                if(! imageUrl.equals("")){//在此過濾空的圖片
-                    if (imageUrl.substring(0,3).equals("//t")) {//google有些圖放在//t開頭的網址裡
+                if (!imageUrl.equals("")) {//在此過濾空的圖片
+                    if (imageUrl.substring(0, 3).equals("//t")) {//google有些圖放在//t開頭的網址裡
                         Image = getBitmapfromURL("http:" + imageUrl);
                     } else {  //google有的圖片是用Base64編碼存放，所以先把此字串前面data:image/jpeg;base64,的宣告刪掉再去解碼
                         try {
                             imageUrl = imageUrl.substring(imageUrl.indexOf(",") + 1);
                             byte[] byteUrl = Base64.decode(imageUrl, Base64.DEFAULT);
                             Image = BitmapFactory.decodeByteArray(byteUrl, 0, byteUrl.length);
-                        }catch (Exception e){
+                        } catch (Exception e) {
                             Log.e("Base64", e.toString());
                             Log.e("Base64", imageUrl);
                         }
@@ -182,6 +188,75 @@ public class MainActivity extends AppCompatActivity
                     swipeRefreshLayout.setRefreshing(false);
                     swipeRefreshLayout.setEnabled(true);
                     progressDialog.dismiss();
+                }
+            });
+        }
+    });
+
+    //touchListener
+    private View.OnTouchListener listViewTouchListener = new View.OnTouchListener() {
+        private float x,y;
+        private int mx, my;
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    x = event.getX();
+                    y = event.getY();
+                    Log.d("Action_Down", " X:" + x +" Y:" + y);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    mx = (int) (event.getX() - x);
+                    my = (int) (event.getY() - y);
+                    Log.d("Action_Move", "mX:" + mx + " mY:" + my);
+                    break;
+            }
+            Log.d("Action_Time", "dt:" + event.getDownTime() + " et:" +  event.getEventTime());
+            return true;
+        }
+    };
+    //滑頁的執行續
+    private Thread slide = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            int x = getResources().getDisplayMetrics().widthPixels;
+            int y = getResources().getDisplayMetrics().heightPixels;
+            Log.d("Point", x + "+" + y);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    long downTime = SystemClock.uptimeMillis();
+                    long eventTime = SystemClock.uptimeMillis();
+                    MotionEvent move = null, down, up, stop;
+                    View view = findViewById(R.id.drawer_layout);
+                    for(int i = 0; i < 10;i++) {
+                        //press
+                        down = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, 100, 900 - 80*(i-1), 0);
+                        view.dispatchTouchEvent(down);
+                        SystemClock.sleep(10);
+                        //move
+//                    for(int i = 0; i<400; i++) {
+                        eventTime = SystemClock.uptimeMillis() + 50;
+                        move = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_MOVE, 100, 900 - 80 * i, 0);
+                        view.dispatchTouchEvent(move);
+
+                        SystemClock.sleep(10);
+                        //stop
+                        eventTime = SystemClock.uptimeMillis() + 1000;
+                        stop = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, 100, 100, 0);
+                        view.dispatchTouchEvent(stop);
+                        SystemClock.sleep(10);
+                    }
+//                    up = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_UP, 100, 100, 0);
+//                    view.dispatchTouchEvent(up);
+//                    SystemClock.sleep(10);
+                    //recycle
+//                    down.recycle();
+//                    up.recycle();
+                    move.recycle();
+//                    stop.recycle();
                 }
             });
         }
@@ -247,7 +322,6 @@ public class MainActivity extends AppCompatActivity
         txtHeading.setText(item.getTitle());
         if (id == R.id.iTopStories) {
             sUrl = urlTopStories;
-            Log.d("item_TopStories",sUrl);
         } else if (id == R.id.iWorld) {
             sUrl = urlWorld;
         } else if (id == R.id.iTaiwan) {
@@ -258,18 +332,17 @@ public class MainActivity extends AppCompatActivity
             sUrl = urlTechnology;
         } else if (id == R.id.iSports) {
             sUrl = urlSports;
-        }else if(id == R.id.iEntertainment){
+        } else if (id == R.id.iEntertainment) {
             sUrl = urlEntertainment;
-        }else if(id == R.id.iTaiwan_China){
+        } else if (id == R.id.iTaiwan_China) {
             sUrl = urlTaiwan_China;
-        }else if(id == R.id.iCommunity){
+        } else if (id == R.id.iCommunity) {
             sUrl = urlCommunity;
-        }else if(id == R.id.iHealthy){
+        } else if (id == R.id.iHealthy) {
             sUrl = urlHealthy;
         }
 
-        Log.d("item_URL", sUrl);
-        new Thread(thread).start();
+        new Thread(spider).start();
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
