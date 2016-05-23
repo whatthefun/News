@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
@@ -51,11 +52,14 @@ public class MainActivity extends AppCompatActivity
             urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
 
     private String sUrl = urlTopStories;
+    private boolean isSlide = false;
+    private View view;
     private ListView listView;
     private Adapter adapter;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressDialog progressDialog = null;
     private TextView txtHeading;
+    private MotionEvent down, stop, move;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +70,9 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        view = findViewById(R.id.drawer_layout);
         listView = (ListView) findViewById(R.id.listView);
-        listView.setOnTouchListener(listViewTouchListener);
+//        listView.setOnTouchListener(listViewTouchListener);
 
         listView.setFastScrollEnabled(true);
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
@@ -104,7 +109,11 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new Thread(slide).start();
+                if(!isSlide) {
+                    isSlide = true;
+                    new Thread(slide).start();
+                    isSlide = false;
+                }
             }
         });
 
@@ -121,7 +130,6 @@ public class MainActivity extends AppCompatActivity
 
         new Thread(spider).start();
     }
-
 
 
     //抓新聞資料的執行續
@@ -194,28 +202,28 @@ public class MainActivity extends AppCompatActivity
     });
 
     //touchListener
-    private View.OnTouchListener listViewTouchListener = new View.OnTouchListener() {
-        private float x,y;
-        private int mx, my;
+//    private View.OnTouchListener listViewTouchListener = new View.OnTouchListener() {
+//        private float x, y;
+//        private int mx, my;
+//        @Override
+//        public boolean onTouch(View v, MotionEvent event) {
+//            switch (event.getAction()) {
+//                case MotionEvent.ACTION_DOWN:
+//                    x = event.getX();
+//                    y = event.getY();
+//                    Log.d("Action_Down", " X:" + x + " Y:" + y);
+//                    break;
+//                case MotionEvent.ACTION_MOVE:
+//                    mx = (int) (event.getX() - x);
+//                    my = (int) (event.getY() - y);
+//                    Log.d("Action_Move", "mX:" + mx + " mY:" + my);
+//                    break;
+//            }
+////            Log.d("Action_Time", "dt:" + event.getDownTime() + " et:" + event.getEventTime());
+//            return true;
+//        }
+//    };
 
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            switch (event.getAction()){
-                case MotionEvent.ACTION_DOWN:
-                    x = event.getX();
-                    y = event.getY();
-                    Log.d("Action_Down", " X:" + x +" Y:" + y);
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    mx = (int) (event.getX() - x);
-                    my = (int) (event.getY() - y);
-                    Log.d("Action_Move", "mX:" + mx + " mY:" + my);
-                    break;
-            }
-            Log.d("Action_Time", "dt:" + event.getDownTime() + " et:" +  event.getEventTime());
-            return true;
-        }
-    };
     //滑頁的執行續
     private Thread slide = new Thread(new Runnable() {
         @Override
@@ -223,40 +231,28 @@ public class MainActivity extends AppCompatActivity
             int x = getResources().getDisplayMetrics().widthPixels;
             int y = getResources().getDisplayMetrics().heightPixels;
             Log.d("Point", x + "+" + y);
-
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    long downTime = SystemClock.uptimeMillis();
-                    long eventTime = SystemClock.uptimeMillis();
-                    MotionEvent move = null, down, up, stop;
-                    View view = findViewById(R.id.drawer_layout);
-                    for(int i = 0; i < 10;i++) {
-                        //press
-                        down = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, 100, 900 - 80*(i-1), 0);
-                        view.dispatchTouchEvent(down);
-                        SystemClock.sleep(10);
-                        //move
-//                    for(int i = 0; i<400; i++) {
-                        eventTime = SystemClock.uptimeMillis() + 50;
-                        move = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_MOVE, 100, 900 - 80 * i, 0);
-                        view.dispatchTouchEvent(move);
-
-                        SystemClock.sleep(10);
-                        //stop
-                        eventTime = SystemClock.uptimeMillis() + 1000;
-                        stop = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_DOWN, 100, 100, 0);
-                        view.dispatchTouchEvent(stop);
-                        SystemClock.sleep(10);
-                    }
-//                    up = MotionEvent.obtain(downTime, eventTime, MotionEvent.ACTION_UP, 100, 100, 0);
-//                    view.dispatchTouchEvent(up);
-//                    SystemClock.sleep(10);
-                    //recycle
-//                    down.recycle();
-//                    up.recycle();
-                    move.recycle();
-//                    stop.recycle();
+                    down = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 500, 900, 0);
+                    view.dispatchTouchEvent(down);
+                    new CountDownTimer(1000,100){
+                        int distance = 1;
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+                            move = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 500, 900 - 80*distance, 0);
+                            view.dispatchTouchEvent(move);
+                            distance++;
+                        }
+                        @Override
+                        public void onFinish() {
+                            stop = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 500, 100, 0);
+                            view.dispatchTouchEvent(stop);
+                            move.recycle();
+                            down.recycle();
+                            stop.recycle();
+                        }
+                    }.start();
                 }
             });
         }
