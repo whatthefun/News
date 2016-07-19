@@ -1,4 +1,4 @@
-package com.example.user.news;
+package yuan.test.user.news;
 
 import org.junit.Test;
 

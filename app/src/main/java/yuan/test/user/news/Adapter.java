@@ -1,4 +1,4 @@
-package com.example.user.news;
+package yuan.test.user.news;
 
 import android.content.Context;
 import android.text.Html;
@@ -9,6 +9,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.user.news.R;
 
 import java.util.List;
 
@@ -41,7 +43,7 @@ public class Adapter extends BaseAdapter{
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        viewHolder holder = null;
+        viewHolder holder;
         if(convertView == null){
             convertView = myInflater.inflate(R.layout.news_list, null);
             holder = new viewHolder(
@@ -58,7 +60,9 @@ public class Adapter extends BaseAdapter{
 
         News news = (News) getItem(position);
 
-        holder.imageView.setImageBitmap(news.getImage());
+        if(news.getImage() != null) {
+            holder.imageView.setImageBitmap(news.getImage());
+        }
         holder.txtTitle.setText(Html.fromHtml("<a href = " + news.getAddress() + "> " + news.getTitletext() + "</a>"));
         holder.txtTime.setText(news.getTime());
         holder.txtSource.setText(news.getSource());

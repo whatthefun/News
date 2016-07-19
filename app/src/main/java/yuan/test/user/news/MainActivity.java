@@ -1,4 +1,4 @@
-package com.example.user.news;
+package yuan.test.user.news;
 
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
@@ -26,6 +26,11 @@ import android.widget.AbsListView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.ndk.CrashlyticsNdk;
+import com.example.user.news.R;
+
+import io.fabric.sdk.android.Fabric;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -40,16 +45,16 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private final static String urlTopStories = "https://news.google.com.tw/news",
-            urlWorld = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=w",
-            urlTaiwan = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=n",
-            urlBusiness = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=b",
-            urlTechnology = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=t",
-            urlSports = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=s",
-            urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e",
-            urlTaiwan_China = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=c",
-            urlCommunity = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=y",
-            urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
+    private final String urlTopStories = "https://news.google.com.tw/news";
+    private final String urlWorld = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=w";
+    private final String urlTaiwan = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=n";
+    private final String urlBusiness = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=b";
+    private final String urlTechnology = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=t";
+    private final String urlSports = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=s";
+    private final String urlEntertainment = "https://news.google.com.tw/news/section?cf=all&pz=1&ned=tw&topic=e";
+    private final String urlTaiwan_China = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=c";
+    private final String urlCommunity = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=y";
+    private final String urlHealthy = "https://news.google.com.tw/news/section?cf=all&pz=1&topic=m";
 
     private String sUrl = urlTopStories;
     private boolean isSlide = false;
@@ -57,7 +62,7 @@ public class MainActivity extends AppCompatActivity
     private ListView listView;
     private Adapter adapter;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private ProgressDialog progressDialog = null;
+    private ProgressDialog progressDialog;
     private TextView txtHeading;
     private MotionEvent down, stop, move;
 
@@ -65,14 +70,15 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         super.onCreate(savedInstanceState);
+        Fabric.with(this, new Crashlytics(), new CrashlyticsNdk());
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
         setSupportActionBar(toolbar);
 
         view = findViewById(R.id.drawer_layout);
         listView = (ListView) findViewById(R.id.listView);
-//        listView.setOnTouchListener(listViewTouchListener);
 
         listView.setFastScrollEnabled(true);
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
@@ -154,41 +160,45 @@ public class MainActivity extends AppCompatActivity
             } catch (Exception e) {
                 Log.e("Connection", e.toString());
             }
-            Elements elements = doc.select("table.esc-layout-table");
+            Elements elements = null;
+            if (doc != null) {
+                elements = doc.select("table.esc-layout-table");
+            }
             List<News> news_list = new ArrayList<News>();//new 新的List<News>裝新資料
 
-            for (int i = 0; i < elements.size(); i++) {
-                String imageUrl = "", Title = "", Time = "", Address = "", Source = "";
-                Bitmap Image = null;
+            if(elements != null) {
+                for (int i = 0; i < elements.size(); i++) {
+                    String imageUrl = "", Title = "", Time = "", Address = "", Source = "";
+                    Bitmap Image = null;
 
-                //Google新聞的圖片Html格式一種用src一種用imgsrc
-                imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("src");
-                if (imageUrl == "") {
-                    imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("imgsrc");
-                }
+                    //Google新聞的圖片Html格式一種用src一種用imgsrc
+                    imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("src");
+                    if (imageUrl.equals("")) {
+                        imageUrl = elements.get(i).select("div.esc-thumbnail-image-wrapper img").attr("imgsrc");
+                    }
 
-                if (!imageUrl.equals("")) {//在此過濾空的圖片
-                    if (imageUrl.substring(0, 3).equals("//t")) {//google有些圖放在//t開頭的網址裡
-                        Image = getBitmapfromURL("http:" + imageUrl);
-                    } else {  //google有的圖片是用Base64編碼存放，所以先把此字串前面data:image/jpeg;base64,的宣告刪掉再去解碼
-                        try {
-                            imageUrl = imageUrl.substring(imageUrl.indexOf(",") + 1);
-                            byte[] byteUrl = Base64.decode(imageUrl, Base64.DEFAULT);
-                            Image = BitmapFactory.decodeByteArray(byteUrl, 0, byteUrl.length);
-                        } catch (Exception e) {
-                            Log.e("Base64", e.toString());
-                            Log.e("Base64", imageUrl);
+                    if (!imageUrl.equals("")) {//在此過濾空的圖片
+                        if (imageUrl.substring(0, 3).equals("//t")) {//google有些圖放在//t開頭的網址裡
+                            Image = getBitmapfromURL("http:" + imageUrl);
+                        } else {  //google有的圖片是用Base64編碼存放，所以先把此字串前面data:image/jpeg;base64,的宣告刪掉再去解碼
+                            try {
+                                imageUrl = imageUrl.substring(imageUrl.indexOf(",") + 1);
+                                byte[] byteUrl = Base64.decode(imageUrl, Base64.DEFAULT);
+                                Image = BitmapFactory.decodeByteArray(byteUrl, 0, byteUrl.length);
+                            } catch (Exception e) {
+                                Log.e("Base64", e.toString());
+                                Log.e("Base64", imageUrl);
+                            }
                         }
                     }
+
+                    Title = elements.get(i).select("h2.esc-lead-article-title span.titletext").text();
+                    Address = elements.get(i).select("h2.esc-lead-article-title a").attr("url");
+                    Time = elements.get(i).select("div.esc-lead-article-source-wrapper span.al-attribution-timestamp").text();
+                    Source = elements.get(i).select("div.esc-lead-article-source-wrapper span.al-attribution-source").text();
+                    news_list.add(new News(Image, Title, Address, Time, Source));
                 }
-
-                Title = elements.get(i).select("h2.esc-lead-article-title span.titletext").text();
-                Address = elements.get(i).select("h2.esc-lead-article-title a").attr("url");
-                Time = elements.get(i).select("div.esc-lead-article-source-wrapper span.al-attribution-timestamp").text();
-                Source = elements.get(i).select("div.esc-lead-article-source-wrapper span.al-attribution-source").text();
-                news_list.add(new News(Image, Title, Address, Time, Source));
             }
-
             adapter = new Adapter(MainActivity.this, news_list);
             runOnUiThread(new Runnable() {
                 public void run() {
@@ -200,29 +210,6 @@ public class MainActivity extends AppCompatActivity
             });
         }
     });
-
-    //touchListener
-//    private View.OnTouchListener listViewTouchListener = new View.OnTouchListener() {
-//        private float x, y;
-//        private int mx, my;
-//        @Override
-//        public boolean onTouch(View v, MotionEvent event) {
-//            switch (event.getAction()) {
-//                case MotionEvent.ACTION_DOWN:
-//                    x = event.getX();
-//                    y = event.getY();
-//                    Log.d("Action_Down", " X:" + x + " Y:" + y);
-//                    break;
-//                case MotionEvent.ACTION_MOVE:
-//                    mx = (int) (event.getX() - x);
-//                    my = (int) (event.getY() - y);
-//                    Log.d("Action_Move", "mX:" + mx + " mY:" + my);
-//                    break;
-//            }
-////            Log.d("Action_Time", "dt:" + event.getDownTime() + " et:" + event.getEventTime());
-//            return true;
-//        }
-//    };
 
     //滑頁的執行續
     private Thread slide = new Thread(new Runnable() {
@@ -259,7 +246,7 @@ public class MainActivity extends AppCompatActivity
     });
 
     //傳入圖片網址回傳Bitmap圖
-    public static Bitmap getBitmapfromURL(String src) {
+    public Bitmap getBitmapfromURL(String src) {
         try {
             java.net.URL url = new URL(src);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -312,7 +299,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         progressDialog.dismiss();
-        progressDialog = null;
+//        progressDialog = null;
         int id = item.getItemId();
         item.setChecked(true);
         txtHeading.setText(item.getTitle());
