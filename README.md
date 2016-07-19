@@ -1,7 +1,9 @@
 News app
 ----------------
 想抓幾個自己想要的新聞網站，以便自己閱讀新聞。
-除了練習爬蟲還要學習側邊攔還有手勢模擬
+除了練習爬蟲還要學習側邊攔還有手勢模擬<br/>
+附上google play網址: [News app](https://play.google.com/store/apps/details?id=yuan.test.user.news)
+
 
 遇到的問題:
 
